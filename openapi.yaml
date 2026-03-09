@@ -1,0 +1,252 @@
+openapi: 3.0.3
+info:
+  title: Acme Warehouse API
+  version: 2.3.1
+  description: Inventory and warehouse management for the Acme platform.
+  contact:
+    name: Platform Engineering
+    email: platform-eng@acme.com
+servers:
+  - url: https://api.acme.com/warehouse/v2
+    description: Production
+  - url: https://api-staging.acme.com/warehouse/v2
+    description: Staging
+  - url: https://api-dev.acme.com/warehouse/v2
+    description: Development
+security:
+  - bearerAuth: []
+tags:
+  - name: Inventory
+  - name: Products
+  - name: Locations
+  - name: Transfers
+  - name: Suppliers
+  - name: Alerts
+paths:
+  /health:
+    get:
+      tags: [Inventory]
+      summary: Health check
+      operationId: healthCheck
+      security: []
+      responses:
+        '200': { description: Healthy }
+  /inventory:
+    get:
+      tags: [Inventory]
+      summary: List inventory
+      operationId: listInventory
+      parameters:
+        - { name: locationId, in: query, schema: { type: string } }
+        - { name: sku, in: query, schema: { type: string } }
+        - { name: lowStock, in: query, schema: { type: boolean } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+      responses:
+        '200': { description: Inventory list }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /inventory/{itemId}:
+    get:
+      tags: [Inventory]
+      summary: Get inventory item
+      operationId: getInventoryItem
+      parameters:
+        - { name: itemId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Item details }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Inventory]
+      summary: Update inventory item
+      operationId: updateInventoryItem
+      parameters:
+        - { name: itemId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Updated }
+  /inventory/{itemId}/adjust:
+    post:
+      tags: [Inventory]
+      summary: Adjust stock quantity
+      operationId: adjustInventory
+      parameters:
+        - { name: itemId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity, reason]
+              properties:
+                quantity: { type: integer }
+                reason: { type: string, enum: [cycle_count, damage, theft, receiving, return, correction] }
+                notes: { type: string }
+      responses:
+        '200': { description: Adjusted }
+  /products:
+    get:
+      tags: [Products]
+      summary: List products
+      operationId: listProducts
+      parameters:
+        - { name: category, in: query, schema: { type: string } }
+        - { name: active, in: query, schema: { type: boolean } }
+      responses:
+        '200': { description: Products }
+    post:
+      tags: [Products]
+      summary: Create product
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: Created }
+  /products/{productId}:
+    get:
+      tags: [Products]
+      summary: Get product
+      operationId: getProduct
+      parameters:
+        - { name: productId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Product }
+    put:
+      tags: [Products]
+      summary: Update product
+      operationId: updateProduct
+      parameters:
+        - { name: productId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Updated }
+    delete:
+      tags: [Products]
+      summary: Archive product
+      operationId: archiveProduct
+      parameters:
+        - { name: productId, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: Archived }
+  /locations:
+    get:
+      tags: [Locations]
+      summary: List locations
+      operationId: listLocations
+      responses:
+        '200': { description: Locations }
+    post:
+      tags: [Locations]
+      summary: Create location
+      operationId: createLocation
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: Created }
+  /locations/{locationId}:
+    get:
+      tags: [Locations]
+      summary: Get location
+      operationId: getLocation
+      parameters:
+        - { name: locationId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Location }
+    patch:
+      tags: [Locations]
+      summary: Update location
+      operationId: updateLocation
+      parameters:
+        - { name: locationId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Updated }
+  /transfers:
+    get:
+      tags: [Transfers]
+      summary: List transfers
+      operationId: listTransfers
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [pending, in_transit, completed, cancelled] } }
+      responses:
+        '200': { description: Transfers }
+    post:
+      tags: [Transfers]
+      summary: Create transfer
+      operationId: createTransfer
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: Created }
+  /transfers/{transferId}/complete:
+    post:
+      tags: [Transfers]
+      summary: Complete transfer
+      operationId: completeTransfer
+      parameters:
+        - { name: transferId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Completed }
+  /alerts:
+    get:
+      tags: [Alerts]
+      summary: List alerts
+      operationId: listAlerts
+      parameters:
+        - { name: severity, in: query, schema: { type: string, enum: [low, medium, high, critical] } }
+        - { name: resolved, in: query, schema: { type: boolean } }
+      responses:
+        '200': { description: Alerts }
+  /alerts/{alertId}/resolve:
+    post:
+      tags: [Alerts]
+      summary: Resolve alert
+      operationId: resolveAlert
+      parameters:
+        - { name: alertId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Resolved }
+  /suppliers:
+    get:
+      tags: [Suppliers]
+      summary: List suppliers
+      operationId: listSuppliers
+      responses:
+        '200': { description: Suppliers }
+    post:
+      tags: [Suppliers]
+      summary: Create supplier
+      operationId: createSupplier
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: Created }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Unauthorized:
+      description: Unauthorized
+    NotFound:
+      description: Not found
