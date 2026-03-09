@@ -1,0 +1,6 @@
+{
+  "workspaceName": "Warehouse API",
+  "domain": "warehouse",
+  "collections": "postman/collections",
+  "environments": "postman/environments"
+}
