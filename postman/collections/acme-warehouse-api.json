@@ -1,0 +1,403 @@
+{
+  "info": {
+    "name": "Acme Warehouse API",
+    "description": "Complete test suite for the Acme Warehouse API v2. Covers inventory, products, locations, transfers, alerts, and suppliers.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "{{baseUrl}}", "type": "string" },
+    { "key": "token", "value": "{{token}}", "type": "string" },
+    { "key": "inventoryItemId", "value": "", "type": "string" },
+    { "key": "productId", "value": "", "type": "string" },
+    { "key": "locationId", "value": "", "type": "string" },
+    { "key": "transferId", "value": "", "type": "string" },
+    { "key": "supplierId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response time < 500ms', () => pm.expect(pm.response.responseTime).to.be.below(500));",
+                  "pm.test('Status is healthy', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('healthy');",
+                  "});",
+                  "pm.test('Version present', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.version).to.match(/^\\d+\\.\\d+\\.\\d+$/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inventory",
+      "item": [
+        {
+          "name": "GET /inventory",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
+                  "pm.test('Has data array', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('data');",
+                  "  pm.expect(json.data).to.be.an('array');",
+                  "});",
+                  "pm.test('Has pagination', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('pagination');",
+                  "  pm.expect(json.pagination).to.have.all.keys('page','limit','total','totalPages');",
+                  "});",
+                  "if (pm.response.json().data.length > 0) {",
+                  "  pm.collectionVariables.set('inventoryItemId', pm.response.json().data[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/inventory?page=1&limit=20",
+              "host": ["{{baseUrl}}"], "path": ["inventory"],
+              "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "GET /inventory - filter low stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('All items are low stock', () => {",
+                  "  const json = pm.response.json();",
+                  "  json.data.forEach(item => {",
+                  "    pm.expect(item.availableQuantity).to.be.at.most(item.reorderPoint);",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/inventory?lowStock=true",
+              "host": ["{{baseUrl}}"], "path": ["inventory"],
+              "query": [{ "key": "lowStock", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "GET /inventory/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Item has required fields', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.all.keys('id','sku','productId','locationId','quantity','reservedQuantity','availableQuantity','reorderPoint','reorderQuantity','unitCost','createdAt','updatedAt');",
+                  "});",
+                  "pm.test('Available qty = quantity - reserved', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.availableQuantity).to.eql(json.quantity - json.reservedQuantity);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/inventory/{{inventoryItemId}}", "host": ["{{baseUrl}}"], "path": ["inventory", "{{inventoryItemId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /inventory/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Reorder point updated', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.reorderPoint).to.eql(25);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"reorderPoint\": 25, \"reorderQuantity\": 100}" },
+            "url": { "raw": "{{baseUrl}}/inventory/{{inventoryItemId}}", "host": ["{{baseUrl}}"], "path": ["inventory", "{{inventoryItemId}}"] }
+          }
+        },
+        {
+          "name": "POST /inventory/:id/adjust",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Quantity changed', () => {",
+                  "  pm.expect(pm.response.json()).to.have.property('quantity');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"quantity\": 10, \"reason\": \"cycle_count\", \"notes\": \"Automated test adjustment\"}" },
+            "url": { "raw": "{{baseUrl}}/inventory/{{inventoryItemId}}/adjust", "host": ["{{baseUrl}}"], "path": ["inventory", "{{inventoryItemId}}", "adjust"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "GET /products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has data array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "if (pm.response.json().data.length > 0) {",
+                  "  pm.collectionVariables.set('productId', pm.response.json().data[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/products?active=true&limit=50", "host": ["{{baseUrl}}"], "path": ["products"], "query": [{ "key": "active", "value": "true" }, { "key": "limit", "value": "50" }] }
+          }
+        },
+        {
+          "name": "POST /products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Product has id', () => pm.expect(pm.response.json()).to.have.property('id'));",
+                  "pm.test('SKU matches', () => pm.expect(pm.response.json().sku).to.eql('TEST-SKU-001'));",
+                  "pm.collectionVariables.set('productId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"sku\": \"TEST-SKU-001\", \"name\": \"Test Pallet Rack\", \"category\": \"Storage\", \"weight\": 42.5}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "GET /products/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Product has required fields', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.all.keys('id','sku','name','category','active','createdAt','updatedAt');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Locations",
+      "item": [
+        {
+          "name": "GET /locations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has data array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "if (pm.response.json().data.length > 0) {",
+                  "  pm.collectionVariables.set('locationId', pm.response.json().data[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/locations", "host": ["{{baseUrl}}"], "path": ["locations"] }
+          }
+        },
+        {
+          "name": "POST /locations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Location has id', () => pm.expect(pm.response.json()).to.have.property('id'));",
+                  "pm.collectionVariables.set('locationId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"name\": \"Warehouse A - Zone 1 - Row 1 - Bin 1\", \"type\": \"bin\", \"zone\": \"A\", \"row\": \"1\", \"bin\": \"1\", \"capacity\": 100}" },
+            "url": { "raw": "{{baseUrl}}/locations", "host": ["{{baseUrl}}"], "path": ["locations"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Suppliers",
+      "item": [
+        {
+          "name": "GET /suppliers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has data array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('Response time < 1000ms', () => pm.expect(pm.response.responseTime).to.be.below(1000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/suppliers", "host": ["{{baseUrl}}"], "path": ["suppliers"] }
+          }
+        },
+        {
+          "name": "POST /suppliers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Supplier has id', () => pm.expect(pm.response.json()).to.have.property('id'));",
+                  "pm.test('Contact email matches', () => pm.expect(pm.response.json().contactEmail).to.eql('supplier@test.com'));",
+                  "pm.collectionVariables.set('supplierId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"name\": \"Test Supplier Co.\", \"contactEmail\": \"supplier@test.com\", \"leadTimeDays\": 7}" },
+            "url": { "raw": "{{baseUrl}}/suppliers", "host": ["{{baseUrl}}"], "path": ["suppliers"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Alerts",
+      "item": [
+        {
+          "name": "GET /alerts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has data array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('No unresolved critical alerts', () => {",
+                  "  const critical = pm.response.json().data.filter(a => a.severity === 'critical' && !a.resolved);",
+                  "  pm.expect(critical.length).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/alerts?resolved=false",
+              "host": ["{{baseUrl}}"], "path": ["alerts"],
+              "query": [{ "key": "resolved", "value": "false" }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
