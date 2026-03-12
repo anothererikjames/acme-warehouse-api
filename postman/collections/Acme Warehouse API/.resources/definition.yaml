@@ -1,0 +1,11 @@
+$kind: collection
+description: Complete test suite for the Acme Warehouse API v2. Covers
+  inventory, products, locations, transfers, alerts, and suppliers.
+variables:
+  baseUrl: "{{baseUrl}}"
+  token: "{{token}}"
+  inventoryItemId: ""
+  productId: ""
+  locationId: ""
+  transferId: ""
+  supplierId: ""

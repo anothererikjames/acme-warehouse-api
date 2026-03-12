@@ -1,0 +1,15 @@
+$kind: collection
+description: |-
+  Inventory and warehouse management for the Acme platform.
+
+  Contact Support:
+   Name: Platform Engineering
+   Email: platform-eng@acme.com
+variables:
+  baseUrl: https://api.acme.com/warehouse/v2
+auth:
+  - id: ""
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{bearerToken}}"

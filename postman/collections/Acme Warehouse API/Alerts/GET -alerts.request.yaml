@@ -1,0 +1,22 @@
+$kind: http-request
+name: GET /alerts
+url: "{{baseUrl}}/alerts?resolved=false"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  resolved: "false"
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test('Status is 200', () => pm.response.to.have.status(200));
+
+      pm.test('Has data array', () =>
+      pm.expect(pm.response.json().data).to.be.an('array'));
+
+      pm.test('No unresolved critical alerts', () => {
+        const critical = pm.response.json().data.filter(a => a.severity === 'critical' && !a.resolved);
+        pm.expect(critical.length).to.eql(0);
+      });
+    language: text/javascript
+order: 1000

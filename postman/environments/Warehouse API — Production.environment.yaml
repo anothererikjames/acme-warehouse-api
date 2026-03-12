@@ -1,0 +1,12 @@
+name: Warehouse API — Production
+values:
+  - key: baseUrl
+    value: https://api.acme.com/warehouse/v2
+    enabled: true
+  - key: authToken
+    value: ""
+    enabled: true
+  - key: userId
+    value: usr_demo_001
+    enabled: true
+color: null

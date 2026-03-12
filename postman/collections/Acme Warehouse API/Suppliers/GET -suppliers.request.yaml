@@ -1,0 +1,18 @@
+$kind: http-request
+name: GET /suppliers
+url: "{{baseUrl}}/suppliers"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test('Status is 200', () => pm.response.to.have.status(200));
+
+      pm.test('Has data array', () =>
+      pm.expect(pm.response.json().data).to.be.an('array'));
+
+      pm.test('Response time < 1000ms', () =>
+      pm.expect(pm.response.responseTime).to.be.below(1000));
+    language: text/javascript
+order: 1000

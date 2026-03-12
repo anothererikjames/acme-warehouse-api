@@ -1,0 +1,22 @@
+$kind: http-request
+name: POST /locations
+url: "{{baseUrl}}/locations"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"name": "Warehouse A - Zone 1 - Row 1 - Bin 1", "type": "bin",
+    "zone": "A", "row": "1", "bin": "1", "capacity": 100}'
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test('Status is 201', () => pm.response.to.have.status(201));
+
+      pm.test('Location has id', () =>
+      pm.expect(pm.response.json()).to.have.property('id'));
+
+      pm.collectionVariables.set('locationId', pm.response.json().id);
+    language: text/javascript
+order: 2000

@@ -1,0 +1,22 @@
+$kind: http-request
+name: GET /inventory/:id
+url: "{{baseUrl}}/inventory/{{inventoryItemId}}"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test('Status is 200', () => pm.response.to.have.status(200));
+
+      pm.test('Item has required fields', () => {
+        const json = pm.response.json();
+        pm.expect(json).to.have.all.keys('id','sku','productId','locationId','quantity','reservedQuantity','availableQuantity','reorderPoint','reorderQuantity','unitCost','createdAt','updatedAt');
+      });
+
+      pm.test('Available qty = quantity - reserved', () => {
+        const json = pm.response.json();
+        pm.expect(json.availableQuantity).to.eql(json.quantity - json.reservedQuantity);
+      });
+    language: text/javascript
+order: 3000

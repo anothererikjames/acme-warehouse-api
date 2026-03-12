@@ -1,0 +1,22 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/inventory?locationId=<string>&sku=<string>&lowStock=<boolean>\
+    &page=1&limit=50"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  queryParams:
+    locationId: <string>
+    sku: <string>
+    lowStock: <boolean>
+    page: "1"
+    limit: "50"
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  body:
+    type: text
+    content: ""
+order: 2000

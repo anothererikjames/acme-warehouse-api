@@ -1,0 +1,20 @@
+$kind: http-request
+name: PATCH /inventory/:id
+url: "{{baseUrl}}/inventory/{{inventoryItemId}}"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"reorderPoint": 25, "reorderQuantity": 100}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 200', () => pm.response.to.have.status(200));
+      pm.test('Reorder point updated', () => {
+        const json = pm.response.json();
+        pm.expect(json.reorderPoint).to.eql(25);
+      });
+    language: text/javascript
+order: 4000
