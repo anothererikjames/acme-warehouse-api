@@ -1,0 +1,27 @@
+{
+  "items": [
+    {
+      "id": "item_001",
+      "sku": "WH-1001",
+      "name": "Widget A",
+      "quantity": 500
+    }
+  ],
+  "locations": [
+    {
+      "id": "loc_A1",
+      "zone": "A",
+      "row": 1,
+      "capacity": 1000
+    }
+  ],
+  "transfers": [
+    {
+      "id": "xfr_001",
+      "from": "loc_A1",
+      "to": "loc_B2",
+      "itemId": "item_001",
+      "qty": 50
+    }
+  ]
+}
